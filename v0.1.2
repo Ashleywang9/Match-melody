@@ -1,0 +1,434 @@
+initCollab('uniqueName')
+
+let output = new Tone.Multiply(.1).toDestination()
+let s = new Twinkle()
+s.connect(output)
+// s.initGui()
+
+let gui = new p5(sketch, Canvas)
+
+let s2 = new Twinkle()
+s2.connect(output)
+// s2.initGui()
+
+s.drawing.enable()
+s2.drawing.enable()
+
+// s.sequence("0 1 2 3", "8n")
+// s.stop()
+// s2.sequence("2 4 6 8","16n")
+// s2.stop()
+//==octave function==
+let vAknobs = []
+let vBknobs = []
+let knobNames = ["octave"]
+
+vAknobs.push(gui.Knob({
+    label: knobNames[0],
+    x: 90, y: 25, 
+    size:0.5,
+    min:0, max: 1, curve: 2,
+    callback: x => {
+    s.octave = Math.floor(x);
+  },
+    textColor:[255,255,255],textSize:0.5,
+    border: 0.5, accentColor:[255,0,0],
+    showValue:false,
+  }))
+  vAknobs[0].setLink('vAknobs0')
+
+
+vAknobs[0].max = 4
+vAknobs[0].isInteger = true
+vAknobs[0].callback = x=> {
+  x = Math.floor(x)
+  s.octave = x
+}
+
+for(let i=0; i<6;i++){
+  vBknobs.push(gui.Knob({
+    label: knobNames[0],
+    x: 90, y: 75, 
+    size:0.5,
+    min:0, max: 1, curve: 2,
+    callback: x => {
+    s.octave = Math.floor(x);
+  },
+    textColor:[255,255,255],textSize:0.5,
+    border: 0.5, accentColor:[255,0,0],
+    showValue:false,
+  }))
+  vBknobs[0].setLink('vBknobs0')
+}
+
+vBknobs[0].max = 4
+vBknobs[0].isInteger = true
+vBknobs[0].callback = x=> {
+  x = Math.floor(x)
+  s2.octave = x
+}
+
+//==start function==
+// let button3 = gui.Toggle({
+//   label:'start1',
+//   callback: function(x){
+//     if(x==1) s.start()
+//     else s.stop()
+//     //s.seq('. . . .','8n')
+//   },
+//   size: .5, border: 2,
+//   borderColor: [255,0,0],
+//   x:5, y:10, textColor: [255,255,255]
+// })
+// button3.setLink('button3')
+
+// let button4 = gui.Toggle({
+//   label:'start2',
+//   callback: function(x){
+//     if(x==1) s2.start()
+//     else s2.stop()
+//     // s2.seq('. . . .','8n')
+//   },
+//   size: .5, border: 2,
+//   borderColor: [255,0,0],
+//   x:5, y:60, textColor: [255,255,255]
+// })
+// button4.setLink('button4')
+
+//==part function==
+let part1=true
+let part2=true
+let button5 = gui.Toggle({
+  label:'Start A',
+  callback: function(x){
+    if(x==1) {
+      part1=true
+      s.start()
+    }
+    else {
+      part1=false
+      s.stop()
+    }
+  },
+  size: .7, border: 2,
+  borderColor: [255,0,0],
+  x:5, y:35, textColor: [255,255,255]
+})
+button5.setLink('button5')
+
+let button6 = gui.Toggle({
+  label:'start B',
+  callback: function(x){
+    if(x==1) {
+      part2=true
+      s2.start()
+    }
+    else {
+      part2=false
+      s2.stop()
+    }
+  },
+  size: .7, border: 2,
+  borderColor: [255,0,0],
+  x:5, y:85, textColor: [255,255,255]
+})
+button6.setLink('button6')
+
+//==timer==
+let timeLeft = 90;
+let timerDisplay = gui.Text({
+  label: 'time: 90',
+  x: 85, y: 8,
+  textSize: 1.2,
+  textColor: [255, 255, 255]
+});
+let countdown = setInterval(() => {
+  if (timeLeft > 0) {
+    timeLeft--;
+    timerDisplay.label = 'Time: ' + timeLeft;
+  } else {
+    timerDisplay.label = "time is up";
+    part1=false
+    part2=false
+    let finalScore = scoreMelody();
+    // s.stop();
+    // s2.stop();
+  }
+}, 1000);
+
+//==faders/toggles for blue and red==
+gui.backgroundColor = [100,200,255]
+
+let notes = []
+let notes2 = []
+let keySpacing = 90/9
+let enable = []
+let enable2 = []
+let vals = ['.','.','.','.','.','.','.','.']
+//the blue one
+for(let i=0;i<8;i++){
+    notes.push(gui.Fader({
+    label:'',
+    size: 0.5, border: 4, width:2,
+    borderColor: [255,255,255],
+    x:12 + i*keySpacing, y:86,
+    textColor : [255,255,255],
+    accentColor:[0,0,200], max:8,
+    callback:x=> {
+      if(part2) {
+        console.log(x)
+        if(x==0) {
+          s2.seq[0].vals[i]='.'
+          enable[i].set(0)
+        }
+        else {
+          s2.seq[0].vals[i]=x
+          enable[i].set(1)
+        }
+      }
+      // if( x == 0 ) s2.seq[0].vals[i] = '.'
+      // else s2.seq[0].vals[i] = x
+      scoreMelody();
+    },
+    showLabel: false, showValue: false,
+    value: 0
+  }))
+  enable.push(gui.Toggle({
+    label:'',
+    size: 0.5, border: 4, width:2,
+    borderColor: [255,255,255],
+    x:12 + i*keySpacing, y:76,
+    textColor : [255,255,255],
+    accentColor:[0,0,200],
+    callback:x=> {
+      if(part2) x==0 ? s2.seq[0].vals[i] = '.' : s2.seq[0].vals[i] = notes[i].value
+    },
+    showLabel: false, showValue: false,
+    value: 0
+  }))
+  notes[i].setLink('notes'+i)
+  enable[i].setLink('enable'+i)
+}
+//the red on3
+for(let i=0;i<8;i++){
+  notes2.push(gui.Fader({
+    label:'',
+    size: 0.5, border: 5, width:2, 
+    borderColor: [0,0,0],
+    x:12 + (i)*keySpacing , y:35,
+    textColor : [255,255,255],
+    accentColor:[200,0,0],
+    max:8,
+    callback:x=> {
+      if(part1) {
+        console.log(x)
+        if(x==0) {
+          s.seq[0].vals[i]='.'
+          enable2[i].set(0)
+        }
+        else {
+          s.seq[0].vals[i] = x
+          enable2[i].set(1)
+        }
+      }
+      scoreMelody();
+    },
+    showLabel: false, showValue: false,
+    value: 0
+  }))
+  enable2.push(gui.Toggle({
+    label:'',
+    size: 0.5, border: 2,
+    borderColor: [0,0,0],
+    x:12 + i*keySpacing, y:25,
+    textColor : [255,255,255],
+    accentColor:[200,0,0],
+    callback:x=> {
+      if(part1) x==0 ? s.seq[0].vals[i] = '.' : s.seq[0].vals[i] = notes2[i].value
+    },
+    showLabel: false, showValue: false,
+    value: 0
+  }))
+  notes2[i].setLink('notes2'+i)
+  enable2[i].setLink('enable2'+i)
+}
+
+let lineA = gui.Line(0,52,100,52,{
+  border:4, color: 'accent'
+})
+
+let bestScore = 0;
+
+s.sequence(". . . . . . . .","8n")
+// s.stop()
+s2.sequence(". . . . . . . .","8n")
+// s2.stop()
+
+//==scoring system==
+let int = (x)=>{
+  if(x<0.5) return 0
+  else if (x<1.5) return 1
+  else if (x<2.5) return 2
+  else if (x<3.5) return 3
+  else if (x<4.5) return 4
+  else if (x<5.5) return 5
+  else if (x<6.5) return 6
+  else if (x<7.5) return 7
+  else if (x<8.5) return 8
+}
+
+let scorekeep = gui.Text({
+  label: 'p1: 0',
+  x: 95, y: 8,
+  textSize: 1.2,
+  textColor: [255, 255, 255]
+})
+
+let bestScoreDisplay = gui.Text({ //my best score system
+  label: 'Best: 0',
+  x: 95, y: 15, 
+  textSize: 0.8,
+  textColor: [255,255,255]
+});
+
+let scoreMelody = ()=>{
+  let points=0
+  let harmonyPoints= {
+    '0':2,
+    '1':-2,
+    '2':4,
+    '3':1,
+    '4':2,
+    '5':2,
+    '6':4,
+    '7':-1,
+    '8':3
+  }
+  for(let i=0;i<8;++i) {
+    if(s.seq[0].vals[i]=='.'&&s2.seq[0].vals[i]=='.') continue
+    else if(s.seq[0].vals[i]=='.'||s2.seq[0].vals[i]=='.') points=points-2
+    else{
+      let diff = s.seq[0].vals[i]-s2.seq[0].vals[i]
+      if(diff<0) diff=-diff
+      diff=int(diff)
+      points+=harmonyPoints[diff]
+      console.log(diff)
+    }
+  }
+  scorekeep.label = 'pts: '+ points
+  if (points > bestScore) {
+  bestScore = points;
+  bestScoreDisplay.label = 'Best: ' + bestScore;
+  }
+  return points
+}
+let ans=scoreMelody()
+console.log(ans)
+
+//==reset==
+let resetEverything = () => {
+  scorekeep.label = 'pts: 0'
+  for (let i = 0; i < 8; i++) {
+    s.seq[0].vals[i] = '.'
+    notes2[i].set(0)   
+    enable2[i].set(0) 
+  }
+  for (let i = 0; i < 8; i++) {
+    s2.seq[0].vals[i] = '.'
+    notes[i].set(0)   
+    enable[i].set(0)          
+  }
+  // button3.set(0)
+  // button4.set(0)
+  button5.set(0)
+  button6.set(0)
+  part1=false;
+  part2=false;
+  s.stop()
+  s2.stop()
+  console.log("round reset")
+};
+
+let resetButton = gui.Button({
+  label: 'reset',
+  x: 28, y: 10,
+  size: 0.5,
+  border: 2,
+  callback: () => resetEverything(),
+  textColor: [255, 255, 255],
+  borderColor: [255,0,0],
+});
+
+let newA = gui.Button({
+  label: 'Alead',
+  x:8, y:10,
+  size: 0.5,
+  border: 2,
+  callback: () => {
+    timeLeft = 90
+    timerDisplay.label = 'Time: 90'
+    button5.set(1)
+    part1=true;
+    s.start()
+  },
+  textColor: [255,255,255],
+  borderColor: [255,0,0],
+});
+let newB = gui.Button({
+  label: 'Blead',
+  x:14, y:10,
+  size: 0.5,
+  border: 2,
+  callback: () => {
+    timeLeft = 90
+    timerDisplay.label = 'Time: 90'
+    button6.set(1)
+    part2=true;
+    s2.start()
+  },
+  textColor: [255,255,255],
+  borderColor: [255,0,0],
+});
+let newC = gui.Button({
+  label: 'Both',
+  x:20, y:10,
+  size: 0.5,
+  border: 2,
+  callback: () => {
+    timeLeft = 90
+    timerDisplay.label = 'Time: 90'
+    button5.set(1)
+    button6.set(1)
+    part1=true;
+    part2=true;
+    s.start()
+    s2.start()
+  },
+  textColor: [255,255,255],
+  borderColor: [255,0,0],
+});
+
+//==radiobutton==
+let presets = gui.RadioButton({
+  label: 'types', 
+  x:40, y:8, 
+  size:0.5, 
+  radioOptions:['preset1', 'preset2', 'preset3', 'preset4'],
+  callback: x=> {
+    if(presets == 'preset1'){
+
+    }
+    if(presets == 'preset2'){
+
+    }
+    
+  },
+  orientation: 'horizontal',
+  textColor: [255, 255, 255],
+  border: 2,        
+})
+presets.setLink('presettype')
+presets.x = 62
+presets.size = 0.5
+
+
